@@ -1,6 +1,7 @@
 package io.vortex.commerce.orderservice.infrastructure.adapter.in.web.handler;
 
 import io.vortex.commerce.orderservice.domain.constants.ErrorMessages;
+import io.vortex.commerce.orderservice.domain.exception.ConcurrencyConflictException;
 import io.vortex.commerce.orderservice.domain.exception.OrderNotFoundException;
 import io.vortex.commerce.orderservice.domain.exception.ProductNotFoundException;
 import io.vortex.commerce.orderservice.infrastructure.adapter.in.web.dto.ErrorResponse;
@@ -28,14 +29,36 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, status);
     }
 
+    /**
+     * Maneja excepciones cuando no se encuentra un recurso (Orden, Producto, etc.).
+     * Devuelve un HTTP 404 Not Found.
+     */
     @ExceptionHandler({ProductNotFoundException.class, OrderNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFoundException(RuntimeException ex, HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
-    @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
-    public ResponseEntity<ErrorResponse> handleBadRequestException(RuntimeException ex, HttpServletRequest request) {
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequestException(IllegalArgumentException ex, HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    /**
+     * Maneja las excepciones de estado ilegal, como stock insuficiente o transiciones de estado inválidas.
+     * Devuelve un HTTP 409 Conflict.
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    /**
+     * Maneja las excepciones de concurrencia optimista.
+     * Devuelve un HTTP 409 Conflict.
+     */
+    @ExceptionHandler(ConcurrencyConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConcurrencyConflictException(ConcurrencyConflictException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ExceptionHandler(Exception.class)
