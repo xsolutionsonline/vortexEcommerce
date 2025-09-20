@@ -7,12 +7,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Esta es una implementación mock/en memoria del adaptador de inventario.
- * esta clase haría una llamada a otro microservicio
- * Para esta prueba, simulamos
- * que todas las operaciones son exitosas.
- */
 @Component
 @Slf4j
 public class InMemoryInventoryAdapter implements InventoryPort {

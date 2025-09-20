@@ -32,7 +32,6 @@ public class DataInitializer implements CommandLineRunner {
     @Value("${app.security.admin-password}")
     private String adminPassword;
 
-    // Campos para leer las nuevas propiedades
     @Value("${app.security.test-user-username}")
     private String testUserUsername;
 

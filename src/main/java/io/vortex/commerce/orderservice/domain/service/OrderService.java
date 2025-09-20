@@ -1,6 +1,7 @@
 package io.vortex.commerce.orderservice.domain.service;
 
 import io.vortex.commerce.orderservice.domain.constants.ErrorMessages;
+import io.vortex.commerce.orderservice.domain.exception.ConcurrencyConflictException;
 import io.vortex.commerce.orderservice.domain.exception.OrderNotFoundException;
 import io.vortex.commerce.orderservice.domain.exception.ProductNotFoundException;
 import io.vortex.commerce.orderservice.domain.model.Order;
@@ -13,6 +14,7 @@ import io.vortex.commerce.orderservice.domain.port.out.InventoryPort;
 import io.vortex.commerce.orderservice.domain.port.out.OrderRepositoryPort;
 import io.vortex.commerce.orderservice.domain.port.out.ProductPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,27 +72,30 @@ public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCas
     @Transactional
     @Override
     public Order updateOrderStatus(Long orderId, OrderStatus newStatus) {
-
-        Order order = orderRepositoryPort.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(String.format(ErrorMessages.ORDER_NOT_FOUND, orderId)));
-
-        switch (newStatus) {
-            case PROCESSING:
-                order.process();
-                break;
-            case SHIPPED:
-                order.ship();
-                break;
-            case DELIVERED:
-                order.deliver();
-                break;
-            case CANCELLED:
-                order.cancel();
-                break;
-            default:
-                throw new IllegalArgumentException(String.format(ErrorMessages.INVALID_STATUS_TRANSITION, newStatus));
+        try {
+            Order order = orderRepositoryPort.findById(orderId)
+                    .orElseThrow(() -> new OrderNotFoundException(String.format(ErrorMessages.ORDER_NOT_FOUND, orderId)));
+    
+            switch (newStatus) {
+                case PROCESSING:
+                    order.process();
+                    break;
+                case SHIPPED:
+                    order.ship();
+                    break;
+                case DELIVERED:
+                    order.deliver();
+                    break;
+                case CANCELLED:
+                    order.cancel();
+                    break;
+                default:
+                    throw new IllegalArgumentException(String.format(ErrorMessages.INVALID_STATUS_TRANSITION, newStatus));
+            }
+    
+            return orderRepositoryPort.save(order);
+        } catch (ObjectOptimisticLockingFailureException ex) {
+            throw new ConcurrencyConflictException(ErrorMessages.CONCURRENCY_ERROR, ex);
         }
-
-        return orderRepositoryPort.save(order);
     }
 }
