@@ -6,59 +6,71 @@ import io.vortex.commerce.orderservice.infrastructure.adapter.out.persistence.en
 import io.vortex.commerce.orderservice.infrastructure.adapter.out.persistence.repository.JpaRoleRepository;
 import io.vortex.commerce.orderservice.infrastructure.adapter.out.persistence.repository.JpaUserRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class DataInitializer implements CommandLineRunner {
-
-    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
     private final JpaUserRepository userRepository;
     private final JpaRoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${app.admin.username:admin}")
+    @Value("${app.security.admin-username}")
     private String adminUsername;
 
-    @Value("${app.admin.password:password123}")
+    @Value("${app.security.admin-password}")
     private String adminPassword;
 
+    @Value("${app.security.test-user-username}")
+    private String testUserUsername;
+
+    @Value("${app.security.test-user-password}")
+    private String testUserPassword;
+
+
     @Override
-    @Transactional
     public void run(String... args) throws Exception {
-        log.info("Initializing roles...");
-        Arrays.stream(Role.values()).forEach(roleEnum ->
-                roleRepository.findByName(roleEnum)
-                        .orElseGet(() -> {
-                            log.info("Creating role: {}", roleEnum.name());
-                            return roleRepository.save(new RoleEntity(null, roleEnum));
-                        })
-        );
+        log.info("Starting data initialization...");
 
-        if (userRepository.findByUsername(adminUsername).isEmpty()) {
-            log.info("Creating admin user with username: {}", adminUsername);
+        Map<Role, RoleEntity> roles = Arrays.stream(Role.values())
+                .collect(Collectors.toMap(
+                        roleEnum -> roleEnum,
+                        roleEnum -> roleRepository.findByName(roleEnum)
+                                .orElseGet(() -> {
+                                    log.info("Creating role: {}", roleEnum.name());
+                                    return roleRepository.save(new RoleEntity(null, roleEnum));
+                                })
+                ));
 
-            RoleEntity adminRole = roleRepository.findByName(Role.ROLE_ADMIN)
-                    .orElseThrow(() -> new IllegalStateException("FATAL: ROLE_ADMIN not found after initialization."));
+        createUserIfNotFound(adminUsername, adminPassword, Set.of(roles.get(Role.ROLE_ADMIN), roles.get(Role.ROLE_USER)));
 
-            UserEntity adminUser = new UserEntity();
-            adminUser.setUsername(adminUsername);
-            adminUser.setPassword(passwordEncoder.encode(adminPassword));
-            adminUser.setRoles(Set.of(adminRole));
-            userRepository.save(adminUser);
-            log.info("Admin user '{}' created successfully.", adminUsername);
+        createUserIfNotFound(testUserUsername, testUserPassword, Set.of(roles.get(Role.ROLE_USER)));
+
+        log.info("Data initialization finished.");
+    }
+
+    private void createUserIfNotFound(String username, String password, Set<RoleEntity> roles) {
+        if (userRepository.findByUsername(username).isEmpty()) {
+            log.info("Creating user: {}", username);
+            UserEntity user = new UserEntity();
+            user.setUsername(username);
+            user.setPassword(passwordEncoder.encode(password));
+            user.setRoles(roles);
+            userRepository.save(user);
+            log.info("User '{}' created successfully.", username);
         } else {
-            log.info("Admin user '{}' already exists. Skipping creation.", adminUsername);
+            log.info("User '{}' already exists. Skipping creation.", username);
         }
     }
 }

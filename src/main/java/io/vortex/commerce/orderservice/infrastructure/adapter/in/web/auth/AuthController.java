@@ -28,14 +28,12 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(loginRequest.username(), loginRequest.password())
             );
 
-            // We can get the UserDetails directly from the successful authentication.
             final UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
             final String token = tokenProvider.generateToken(userDetails);
 
             return ResponseEntity.ok(new AuthResponse(token));
         } catch (BadCredentialsException e) {
-            // Return 401 Unauthorized for bad credentials, which is more appropriate than 403 Forbidden.
             return ResponseEntity.status(401).build();
         }
     }
