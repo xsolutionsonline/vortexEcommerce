@@ -1,5 +1,6 @@
 package io.vortex.commerce.orderservice.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import io.vortex.commerce.orderservice.domain.constants.ErrorMessages;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -8,15 +9,18 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
+@NoArgsConstructor(access = AccessLevel.PRIVATE) // For Jackson deserialization
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Order {
     private Long id;
     private Long customerId;
     private LocalDateTime orderDate;
     private OrderStatus status;
+    @JsonManagedReference
     private List<OrderItem> items;
     private BigDecimal totalPrice;
     private int version;
