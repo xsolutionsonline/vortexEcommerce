@@ -13,11 +13,6 @@ public interface OrderPersistenceMapper {
 
     OrderEntity toEntity(Order order);
 
-    /**
-     * Después de mapear un Order a un OrderEntity, este método establece el vínculo bidireccional
-     * entre OrderEntity y sus hijos OrderItemEntity. Esto es crucial para que JPA
-     * persista correctamente la clave foránea 'order_id' en la tabla 'order_items'.
-     */
     @AfterMapping
     default void establishBidirectionalRelationship(@MappingTarget OrderEntity orderEntity) {
         if (orderEntity.getItems() != null) {
