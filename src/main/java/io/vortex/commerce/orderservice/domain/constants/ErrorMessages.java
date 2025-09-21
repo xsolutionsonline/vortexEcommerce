@@ -4,8 +4,8 @@ public final class ErrorMessages {
 
     public static final String PRODUCT_NOT_FOUND = "Producto con ID %d no encontrado.";
 
+    public static final String INSUFFICIENT_STOCK_FOR_PRODUCT = "Stock insuficiente para el producto con ID: %s";
     public static final String ORDER_NOT_FOUND = "Orden con ID %d no encontrada.";
-    public static final String INSUFFICIENT_STOCK = "Stock insuficiente para uno o más artículos.";
     public static final String INVALID_STATUS_TRANSITION = "Transición de estado inválida a: %s";
 
     public static final String CANNOT_PROCESS_ORDER = "La orden no se puede procesar porque no está en estado PENDIENTE. Estado actual: %s";
