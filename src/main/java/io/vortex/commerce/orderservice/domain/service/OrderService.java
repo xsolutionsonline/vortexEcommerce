@@ -19,7 +19,6 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +28,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @EnableCaching
-public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCase, FindOrderByIdUseCase, FindOrdersUseCase {
+public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCase, FindOrderByIdUseCase, FindOrdersUseCase, CancelOrderUseCase  {
 
     private final OrderRepositoryPort orderRepositoryPort;
     private final InventoryPort inventoryPort;
@@ -109,5 +108,17 @@ public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCas
     @Transactional(readOnly = true)
     public Page<Order> findOrders(FindOrdersQuery query, Pageable pageable) {
         return orderRepositoryPort.findByQuery(query, pageable);
+    }
+
+    @Override
+    @Transactional
+    public Order cancelOrder(Long orderId) {
+        Order order = orderRepositoryPort.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        order.cancel();
+        inventoryPort.releaseStock(order.getItems());
+
+        return orderRepositoryPort.save(order);
     }
 }

@@ -8,10 +8,10 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface OrderItemPersistenceMapper {
 
-    @Mapping(target = "order", ignore = true) // Evita la dependencia circular al mapear a dominio
+    @Mapping(target = "order", ignore = true) 
     OrderItem toDomain(OrderItemEntity orderItemEntity);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "order", ignore = true) // Avoids circular dependency during mapping
+    @Mapping(target = "order", ignore = true) 
     OrderItemEntity toEntity(OrderItem orderItem);
 }
