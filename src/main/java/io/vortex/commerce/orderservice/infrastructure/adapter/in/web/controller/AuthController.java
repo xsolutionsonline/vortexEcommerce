@@ -1,5 +1,7 @@
-package io.vortex.commerce.orderservice.infrastructure.adapter.in.web.auth;
+package io.vortex.commerce.orderservice.infrastructure.adapter.in.web.controller;
 
+import io.vortex.commerce.orderservice.infrastructure.adapter.in.web.auth.AuthResponse;
+import io.vortex.commerce.orderservice.infrastructure.adapter.in.web.auth.LoginRequest;
 import io.vortex.commerce.orderservice.infrastructure.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
 

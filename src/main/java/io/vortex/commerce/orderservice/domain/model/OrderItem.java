@@ -7,7 +7,9 @@ import lombok.Getter;
 @Getter
 @Builder
 public class OrderItem {
+    private Long id;
     private Long productId;
     private Integer quantity;
     private BigDecimal price;
+    private Order order ;
 }
