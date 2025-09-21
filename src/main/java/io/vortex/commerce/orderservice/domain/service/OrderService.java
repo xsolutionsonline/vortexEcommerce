@@ -7,14 +7,14 @@ import io.vortex.commerce.orderservice.domain.exception.ProductNotFoundException
 import io.vortex.commerce.orderservice.domain.model.Order;
 import io.vortex.commerce.orderservice.domain.model.OrderItem;
 import io.vortex.commerce.orderservice.domain.model.OrderStatus;
-import io.vortex.commerce.orderservice.domain.port.in.CreateOrderUseCase;
-import io.vortex.commerce.orderservice.domain.port.in.CreateOrderCommand;
-import io.vortex.commerce.orderservice.domain.port.in.UpdateOrderStatusUseCase;
+import io.vortex.commerce.orderservice.domain.port.in.*;
 import io.vortex.commerce.orderservice.domain.port.out.InventoryPort;
 import io.vortex.commerce.orderservice.domain.port.out.OrderRepositoryPort;
 import io.vortex.commerce.orderservice.domain.port.out.ProductPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,12 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
 @EnableCaching
-public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCase {
+public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCase, FindOrderByIdUseCase, FindOrdersUseCase {
 
     private final OrderRepositoryPort orderRepositoryPort;
     private final InventoryPort inventoryPort;
@@ -54,19 +56,14 @@ public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCas
             throw new IllegalStateException(ErrorMessages.INSUFFICIENT_STOCK_FOR_PRODUCT);
         }
 
-        BigDecimal total = orderItems.stream()
-                .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         Order order = Order.builder()
                 .customerId(command.customerId())
                 .orderDate(LocalDateTime.now())
                 .status(OrderStatus.PENDING)
                 .items(orderItems)
-                .totalPrice(total)
                 .build();
 
-        inventoryPort.reserveStock(orderItems);
+        inventoryPort.reserveStock(order.getItems());
 
         return orderRepositoryPort.save(order);
     }
@@ -100,5 +97,17 @@ public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCas
         } catch (ObjectOptimisticLockingFailureException ex) {
             throw new ConcurrencyConflictException(ErrorMessages.CONCURRENCY_ERROR, ex);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Order> findById(Long orderId) {
+        return orderRepositoryPort.findById(orderId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Order> findOrders(FindOrdersQuery query, Pageable pageable) {
+        return orderRepositoryPort.findByQuery(query, pageable);
     }
 }

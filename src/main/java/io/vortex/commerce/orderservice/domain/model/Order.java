@@ -4,11 +4,14 @@ import io.vortex.commerce.orderservice.domain.constants.ErrorMessages;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Order {
     private Long id;
     private Long customerId;
@@ -18,10 +21,17 @@ public class Order {
     private BigDecimal totalPrice;
     private int version;
 
-    public void calculateTotalPrice() {
-        this.totalPrice = items.stream()
-                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    public static class OrderBuilder {
+        public Order build() {
+            BigDecimal calculatedPrice = BigDecimal.ZERO;
+            if (this.items != null) {
+                calculatedPrice = this.items.stream()
+                        .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+            }
+
+            return new Order(this.id, this.customerId, this.orderDate, this.status, this.items, calculatedPrice, this.version);
+        }
     }
 
     public void process() {

@@ -11,11 +11,16 @@ import java.util.List;
 
 @Entity
 @Table(name = "orders")
+@NamedEntityGraph(
+        name = "Order.items",
+        attributeNodes = @NamedAttributeNode("items")
+)
 @Getter
 @Setter
 public class OrderEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_seq")
+    @SequenceGenerator(name = "order_seq", sequenceName = "order_sequence", initialValue = 101, allocationSize = 1)
     private Long id;
     private Long customerId;
     private LocalDateTime orderDate;
