@@ -43,8 +43,8 @@ public class KafkaConsumerConfig {
     @Bean
     public NewTopic orderEventsTopic() {
         return TopicBuilder.name(orderEventsTopic)
-                .partitions(1) // Para desarrollo, 1 partición es suficiente.
-                .replicas(1)   // En un clúster de un solo nodo, la réplica debe ser 1.
+                .partitions(1) 
+                .replicas(1)  
                 .build();
     }
 }
