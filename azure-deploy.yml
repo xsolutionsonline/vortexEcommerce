@@ -1,0 +1,44 @@
+apiVersion: 2023-05-01
+location: eastus # Puedes cambiarlo a la región de Azure que prefieras
+name: vortex-kafka-group
+properties:
+  containers:
+  - name: zookeeper
+    properties:
+      image: confluentinc/cp-zookeeper:7.3.0
+      ports:
+      - port: 2181
+      environmentVariables:
+      - name: 'ZOOKEEPER_CLIENT_PORT'
+        value: '2181'
+      - name: 'ZOOKEEPER_TICK_TIME'
+        value: '2000'
+      resources:
+        requests:
+          cpu: 1.0
+          memoryInGB: 1.5
+  - name: kafka
+    properties:
+      image: confluentinc/cp-kafka:7.3.0
+      ports:
+      - port: 9092
+      environmentVariables:
+      - name: 'KAFKA_BROKER_ID'
+        value: '1'
+      - name: 'KAFKA_ZOOKEEPER_CONNECT'
+        value: 'localhost:2181' # Dentro del grupo de contenedores, se ven como localhost
+      - name: 'KAFKA_ADVERTISED_LISTENERS'
+        value: 'PLAINTEXT://vortex-kafka-dev:9092' # Usamos el DNS label que definimos abajo
+      - name: 'KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR'
+        value: '1'
+      resources:
+        requests:
+          cpu: 1.0
+          memoryInGB: 1.5
+  osType: Linux
+  ipAddress:
+    type: Public
+    ports:
+    - protocol: tcp
+      port: 9092
+    dnsNameLabel: vortex-kafka-dev # ¡IMPORTANTE! Elige un nombre único globalmente

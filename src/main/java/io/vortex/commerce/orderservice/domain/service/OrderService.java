@@ -3,6 +3,7 @@ package io.vortex.commerce.orderservice.domain.service;
 import io.vortex.commerce.orderservice.domain.constants.ErrorMessages;
 import io.vortex.commerce.orderservice.domain.exception.ConcurrencyConflictException;
 import io.vortex.commerce.orderservice.domain.exception.OrderNotFoundException;
+import io.vortex.commerce.orderservice.domain.event.OrderEvent;
 import io.vortex.commerce.orderservice.domain.exception.ProductNotFoundException;
 import io.vortex.commerce.orderservice.domain.model.Order;
 import io.vortex.commerce.orderservice.domain.model.OrderItem;
@@ -10,6 +11,7 @@ import io.vortex.commerce.orderservice.domain.model.OrderStatus;
 import io.vortex.commerce.orderservice.domain.port.in.*;
 import io.vortex.commerce.orderservice.domain.port.out.InventoryPort;
 import io.vortex.commerce.orderservice.domain.port.out.OrderRepositoryPort;
+import io.vortex.commerce.orderservice.infrastructure.adapter.out.kafka.OrderEventProducer;
 import io.vortex.commerce.orderservice.domain.port.out.ProductPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.EnableCaching;
@@ -33,6 +35,7 @@ public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCas
     private final OrderRepositoryPort orderRepositoryPort;
     private final InventoryPort inventoryPort;
     private final ProductPort productPort;
+    private final OrderEventProducer eventProducer;
 
     @Transactional
     @Override
@@ -64,7 +67,11 @@ public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCas
 
         inventoryPort.reserveStock(order.getItems());
 
-        return orderRepositoryPort.save(order);
+        Order savedOrder = orderRepositoryPort.save(order);
+
+        eventProducer.sendOrderEvent(new OrderEvent(null, null, OrderEvent.EventType.CREATED, savedOrder));
+
+        return savedOrder;
     }
 
     @Transactional
@@ -92,7 +99,11 @@ public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCas
                     throw new IllegalArgumentException(String.format(ErrorMessages.INVALID_STATUS_TRANSITION, newStatus));
             }
     
-            return orderRepositoryPort.save(order);
+            Order savedOrder = orderRepositoryPort.save(order);
+
+            eventProducer.sendOrderEvent(new OrderEvent(null, null, OrderEvent.EventType.STATUS_UPDATED, savedOrder));
+
+            return savedOrder;
         } catch (ObjectOptimisticLockingFailureException ex) {
             throw new ConcurrencyConflictException(ErrorMessages.CONCURRENCY_ERROR, ex);
         }
