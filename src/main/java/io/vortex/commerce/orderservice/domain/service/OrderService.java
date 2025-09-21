@@ -14,6 +14,7 @@ import io.vortex.commerce.orderservice.domain.port.out.InventoryPort;
 import io.vortex.commerce.orderservice.domain.port.out.OrderRepositoryPort;
 import io.vortex.commerce.orderservice.domain.port.out.ProductPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@EnableCaching
 public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCase {
 
     private final OrderRepositoryPort orderRepositoryPort;
@@ -49,7 +51,7 @@ public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCas
 
 
         if (!inventoryPort.hasSufficientStock(orderItems)) {
-            throw new IllegalStateException(ErrorMessages.INSUFFICIENT_STOCK);
+            throw new IllegalStateException(ErrorMessages.INSUFFICIENT_STOCK_FOR_PRODUCT);
         }
 
         BigDecimal total = orderItems.stream()
@@ -88,6 +90,7 @@ public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCas
                     break;
                 case CANCELLED:
                     order.cancel();
+                    inventoryPort.releaseStock(order.getItems());
                     break;
                 default:
                     throw new IllegalArgumentException(String.format(ErrorMessages.INVALID_STATUS_TRANSITION, newStatus));

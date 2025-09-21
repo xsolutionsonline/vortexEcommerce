@@ -16,4 +16,11 @@ public interface InventoryPort {
      * @param items La lista de items del pedido a reservar.
      */
     void reserveStock(List<OrderItem> items);
+
+     /**
+     * Libera el stock para los items de un pedido reservado.
+     * @param items La lista de items del pedido liberado.
+     */
+
+    void releaseStock(List<OrderItem> items);
 }
