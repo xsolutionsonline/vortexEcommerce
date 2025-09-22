@@ -6,6 +6,7 @@ import io.vortex.commerce.orderservice.domain.model.OrderItem;
 import io.vortex.commerce.orderservice.domain.model.OrderStatus;
 import io.vortex.commerce.orderservice.domain.port.in.*;
 import io.vortex.commerce.orderservice.infrastructure.adapter.in.web.controller.OrderController;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import io.vortex.commerce.orderservice.infrastructure.adapter.in.web.dto.CreateOrderRequest;
 import io.vortex.commerce.orderservice.infrastructure.adapter.in.web.dto.OrderItemRequest;
 import io.vortex.commerce.orderservice.infrastructure.adapter.in.web.dto.UpdateStatusRequest;
@@ -42,8 +43,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(OrderController.class)
-@Import(OrderApiMapperImpl.class) // Import the real mapper implementation for Spring to manage
+@WebMvcTest(controllers = OrderController.class, excludeAutoConfiguration = RedisAutoConfiguration.class)
+@Import(OrderApiMapperImpl.class)
 class OrderControllerIntegrationTest {
 
     @Autowired
