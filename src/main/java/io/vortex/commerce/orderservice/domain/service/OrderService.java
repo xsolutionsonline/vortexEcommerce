@@ -125,11 +125,15 @@ public class OrderService implements CreateOrderUseCase, UpdateOrderStatusUseCas
     @Transactional
     public Order cancelOrder(Long orderId) {
         Order order = orderRepositoryPort.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+                .orElseThrow(() -> new OrderNotFoundException(String.format(ErrorMessages.ORDER_NOT_FOUND, orderId)));
 
         order.cancel();
         inventoryPort.releaseStock(order.getItems());
 
-        return orderRepositoryPort.save(order);
+        Order savedOrder = orderRepositoryPort.save(order);
+
+        eventProducer.sendOrderEvent(new OrderEvent(null, null, OrderEvent.EventType.STATUS_UPDATED, savedOrder));
+
+        return savedOrder;
     }
 }

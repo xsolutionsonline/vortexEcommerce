@@ -7,8 +7,10 @@ import io.vortex.commerce.orderservice.domain.exception.ProductNotFoundException
 import io.vortex.commerce.orderservice.infrastructure.adapter.in.web.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.errors.AuthorizationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -59,6 +61,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConcurrencyConflictException.class)
     public ResponseEntity<ErrorResponse> handleConcurrencyConflictException(ConcurrencyConflictException ex, HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAuthorizationDeniedException(AuthorizationDeniedException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.FORBIDDEN,  ErrorMessages.FORBIDDEN_ERROR, request);
     }
 
     @ExceptionHandler(Exception.class)

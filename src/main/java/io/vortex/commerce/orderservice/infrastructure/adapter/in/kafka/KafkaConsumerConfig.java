@@ -18,8 +18,17 @@ import org.springframework.util.backoff.FixedBackOff;
 @Configuration
 public class KafkaConsumerConfig {
 
-    @Value("${app.kafka.topic.order-events}")
-    private String orderEventsTopic;
+    private final String orderEventsTopic;
+    private final int partitions;
+    private final int replicas;
+
+    public KafkaConsumerConfig(@Value("${app.kafka.topic.order-events}") String orderEventsTopic,
+                               @Value("${app.kafka.topic.partitions:1}") int partitions,
+                               @Value("${app.kafka.topic.replicas:1}") int replicas) {
+        this.orderEventsTopic = orderEventsTopic;
+        this.partitions = partitions;
+        this.replicas = replicas;
+    }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<?, ?> kafkaListenerContainerFactory(
@@ -43,8 +52,8 @@ public class KafkaConsumerConfig {
     @Bean
     public NewTopic orderEventsTopic() {
         return TopicBuilder.name(orderEventsTopic)
-                .partitions(1) 
-                .replicas(1)  
+                .partitions(partitions)
+                .replicas(replicas)
                 .build();
     }
 }
