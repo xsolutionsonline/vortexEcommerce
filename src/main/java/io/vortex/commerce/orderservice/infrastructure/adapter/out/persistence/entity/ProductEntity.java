@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 @Setter
 public class ProductEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "product_seq")
+    @SequenceGenerator(name = "product_seq", sequenceName = "product_sequence", initialValue = 101, allocationSize = 1)
     private Long id;
     private String name;
     private BigDecimal price;

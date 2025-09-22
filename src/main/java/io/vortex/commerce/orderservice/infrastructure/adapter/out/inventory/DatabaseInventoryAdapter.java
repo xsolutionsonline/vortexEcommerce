@@ -59,11 +59,16 @@ public class DatabaseInventoryAdapter implements InventoryPort {
     @Override
     @Transactional
     public void releaseStock(List<OrderItem> items) {
-        for (OrderItem item : items) {
-            ProductEntity product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new ProductNotFoundException(String.format(ErrorMessages.PRODUCT_NOT_FOUND, item.getProductId())));
-            product.setStock(product.getStock() + item.getQuantity());
-            productRepository.save(product);
+        try {
+            for (OrderItem item : items) {
+                ProductEntity product = productRepository.findById(item.getProductId())
+                        .orElseThrow(() -> new ProductNotFoundException(String.format(ErrorMessages.PRODUCT_NOT_FOUND, item.getProductId())));
+                product.setStock(product.getStock() + item.getQuantity());
+                productRepository.save(product);
+            }
+        } catch (ObjectOptimisticLockingFailureException e) {
+            log.warn("Race condition detected while releasing stock. Operation will be rolled back.", e);
+            throw new ConcurrencyConflictException(ErrorMessages.CONCURRENCY_ERROR, e);
         }
     }
 }
